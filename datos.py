@@ -15,7 +15,7 @@ clientes_registrados: list[Cliente] = []
 clientes_por_email: dict[str, Cliente] = {}
 _contador_clientes: int = 0
 
-# funciones de
+# funciones para obtener el ID de usuario, incidencia y cliente
 def obtener_siguiente_id_usuario() -> int:
     global _contador_usuarios
     _contador_usuarios += 1
@@ -31,6 +31,7 @@ def obtener_siguiente_id_cliente() -> int:
     _contador_clientes += 1
     return _contador_clientes
 
+# Función para reiniciar los datos
 def reiniciar_datos():
     global usuarios_registrados, usuarios_por_email, _contador_usuarios
     global incidencias_registradas, incidencias_por_id, _contador_incidencias
