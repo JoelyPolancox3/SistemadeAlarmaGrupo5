@@ -486,3 +486,154 @@ def submenu_gestionar_clientes():
             limpiar_pantalla()
             mostrar_encabezado("ELIMINAR CLIENTE")
             
+            email = leer_texto("Email del cliente a eliminar: ")
+            
+            confirmar = leer_texto("Confirmar eliminacion (s/n): ")
+            if confirmar.lower() == 's':
+                resultado = eliminar_cliente(email)
+                if resultado['exito']:
+                    print(f"\n  Exito: {resultado['mensaje']}")
+                else:
+                    print(f"\n  Error: {resultado['mensaje']}")
+            else:
+                print("\n  Operacion cancelada.")
+            pausa()
+            
+        elif opcion == '6':
+            limpiar_pantalla()
+            mostrar_encabezado("TOTAL DE CLIENTES")
+            
+            total = contar_clientes()
+            print(f"\n  Total de clientes registrados: {total}")
+            pausa()
+            
+        elif opcion == '7':
+            return
+
+def menu_iniciar_sesion() -> bool:
+    global usuario_autenticado
+    
+    limpiar_pantalla()
+    mostrar_encabezado("INICIAR SESION")
+    
+    email = leer_texto("Ingrese su correo electronico: ")
+    contrasena = leer_texto("Ingrese su contrasena: ")
+    
+    resultado = iniciar_sesion(email, contrasena)
+    
+    if resultado['exito']:
+        usuario_autenticado = resultado['usuario']
+        print(f"\n  Exito: {resultado['mensaje']}")
+        print(f"  Bienvenido, {usuario_autenticado.nombre}!")
+        pausa()
+        return True
+    else:
+        print(f"\n  Error: {resultado['mensaje']}")
+        pausa()
+        return False
+
+def submenu_ver_perfil():
+    global usuario_autenticado
+    
+    limpiar_pantalla()
+    mostrar_encabezado("MI PERFIL")
+    
+    print(f"  ID: {usuario_autenticado.id}")
+    print(f"  Nombre: {usuario_autenticado.nombre}")
+    print(f"  Email: {usuario_autenticado.email}")
+    print(f"  Rol: {usuario_autenticado.rol}")
+    
+    pausa()
+
+def submenu_reportar_problema():
+    global usuario_autenticado
+    
+    limpiar_pantalla()
+    mostrar_encabezado("REPORTAR PROBLEMA")
+    
+    print("  Describa el problema que desea reportar:")
+    problema = leer_texto("  > ")
+    
+    resultado = reportar_problema(usuario_autenticado, problema)
+    
+    if resultado['exito']:
+        print(f"\n  Exito: {resultado['mensaje']}")
+    else:
+        print(f"\n  Error: {resultado['mensaje']}")
+    
+    pausa()
+
+def menu_principal_autenticado():
+    global usuario_autenticado
+    
+    while True:
+        limpiar_pantalla()
+        mostrar_encabezado("SOLUCIONES 2T - SISTEMA DE GESTION")
+        print(f"  Usuario autenticado: {usuario_autenticado.nombre}")
+        print("-" * 60)
+        print("  1. Gestionar usuarios")
+        print("  2. Gestionar incidencias")
+        print("  3. Gestionar clientes")
+        print("  4. Reportar problema")
+        print("  5. Ver mi perfil")
+        print("  6. Cerrar sesion")
+        print("  7. Salir del sistema")
+        print("-" * 60)
+        
+        opcion = leer_opcion_menu("Elija una opcion: ", ['1', '2', '3', '4', '5', '6', '7'])
+        
+        if opcion == '1':
+            submenu_gestionar_usuarios()
+        elif opcion == '2':
+            submenu_gestionar_incidencias()
+        elif opcion == '3':
+            submenu_gestionar_clientes()
+        elif opcion == '4':
+            submenu_reportar_problema()
+        elif opcion == '5':
+            submenu_ver_perfil()
+        elif opcion == '6':
+            usuario_autenticado = None
+            print("\n  Sesion cerrada exitosamente.")
+            pausa()
+            return
+        elif opcion == '7':
+            print("\n  Gracias por usar Soluciones 2T.")
+            pausa()
+            exit(0)
+
+def menu_principal_no_autenticado():
+    while True:
+        limpiar_pantalla()
+        mostrar_encabezado("SOLUCIONES 2T")
+        print("  El poder de la tecnologia al alcance de todos.")
+        print("-" * 60)
+        print("  1. Iniciar sesion")
+        print("  2. Registrarse")
+        print("  3. Salir")
+        print("-" * 60)
+        
+        opcion = leer_opcion_menu("Elija una opcion: ", ['1', '2', '3'])
+        
+        if opcion == '1':
+            if menu_iniciar_sesion():
+                menu_principal_autenticado()
+        elif opcion == '2':
+            submenu_registrar_usuario()
+        elif opcion == '3':
+            print("\n  Gracias por usar Soluciones 2T.")
+            pausa()
+            exit(0)
+
+def main():
+    try:
+        menu_principal_no_autenticado()
+    except KeyboardInterrupt:
+        print("\n\n  Programa interrumpido por el usuario.")
+        print("  Gracias por usar Soluciones 2T.")
+    except Exception as e:
+        print(f"\n  Error inesperado: {e}")
+        print("  El sistema se cerrara.")
+
+if __name__ == "__main__":
+    main()
