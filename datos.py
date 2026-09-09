@@ -1,6 +1,12 @@
-from entidades import Usuario, Incidencia, Cliente
+from entidades import Usuario, Incidencia
 
-# Usuario
+# ================================================================
+# CONFIGURACIÓN DE ADMINISTRADOR (AGREGAR ESTO)
+# ================================================================
+ADMIN_EMAIL = "admin@soluciones2t.com"
+ADMIN_PASSWORD = "admin123"
+
+# Usuarios
 usuarios_registrados: list[Usuario] = []
 usuarios_por_email: dict[str, Usuario] = {}
 _contador_usuarios: int = 0
@@ -10,12 +16,7 @@ incidencias_registradas: list[Incidencia] = []
 incidencias_por_id: dict[int, Incidencia] = {}
 _contador_incidencias: int = 0
 
-# Clientes
-clientes_registrados: list[Cliente] = []
-clientes_por_email: dict[str, Cliente] = {}
-_contador_clientes: int = 0
-
-# funciones para obtener el ID de usuario, incidencia y cliente
+# Funciones para IDs
 def obtener_siguiente_id_usuario() -> int:
     global _contador_usuarios
     _contador_usuarios += 1
@@ -26,34 +27,10 @@ def obtener_siguiente_id_incidencia() -> int:
     _contador_incidencias += 1
     return _contador_incidencias
 
-def obtener_siguiente_id_cliente() -> int:
-    global _contador_clientes
-    _contador_clientes += 1
-    return _contador_clientes
-
-# Función para reiniciar los datos
-def reiniciar_datos():
-    global usuarios_registrados, usuarios_por_email, _contador_usuarios
-    global incidencias_registradas, incidencias_por_id, _contador_incidencias
-    global clientes_registrados, clientes_por_email, _contador_clientes
-    
-    usuarios_registrados = []
-    usuarios_por_email = {}
-    _contador_usuarios = 0
-    
-    incidencias_registradas = []
-    incidencias_por_id = {}
-    _contador_incidencias = 0
-    
-    clientes_registrados = []
-    clientes_por_email = {}
-    _contador_clientes = 0
-
-# Función para crear admin si no existe
+# Crear admin al inicio
 def crear_admin_si_no_existe():
-    """Crea el usuario administrador si no existe"""
-    admin_email = "admin@soluciones2t.com"
-    admin_password = "admin123"
+    admin_email = ADMIN_EMAIL  # <--- Usar constante
+    admin_password = ADMIN_PASSWORD  # <--- Usar constante
     
     # Buscar si ya existe admin
     for usuario in usuarios_registrados:
@@ -66,7 +43,10 @@ def crear_admin_si_no_existe():
         nombre="Administrador",
         email=admin_email,
         contrasena=admin_password,
-        rol="admin"
+        rol="admin",
+        telefono="",
+        empresa="Soluciones 2T",
+        sector="privado"
     )
     usuarios_registrados.append(admin)
     usuarios_por_email[admin.email] = admin

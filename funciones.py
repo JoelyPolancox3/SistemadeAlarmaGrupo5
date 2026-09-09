@@ -1,18 +1,16 @@
 # Importar las entidades para crear objetos
-from entidades import Usuario, Incidencia, Cliente
+from entidades import Usuario, Incidencia
 
 # Importamos las colecciones y funciones desde datos.py
 from datos import (
-    usuarios_registrados, 
-    usuarios_por_email, 
+    usuarios_registrados,
+    usuarios_por_email,
     obtener_siguiente_id_usuario,
-    incidencias_registradas, 
-    incidencias_por_id, 
+    incidencias_registradas,
+    incidencias_por_id,
     obtener_siguiente_id_incidencia,
-    clientes_registrados, 
-    clientes_por_email, 
-    obtener_siguiente_id_cliente,
-    crear_admin_si_no_existe
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD
 )
 
 # Sirve para buscar, coincidir y validar patrones de texto de forma avanzada
@@ -21,16 +19,8 @@ import re
 # Se usa datetime para trabajar con fechas y horas
 from datetime import datetime
 
-# CONFIGURACIÓN DE ADMINISTRADOR
-ADMIN_PASSWORD = "admin123"  
-ADMIN_EMAIL = "admin@soluciones2t.com"
 
-# Crear admin al inicio
-crear_admin_si_no_existe()
-
-# ================================================================
-# VALIDACIONES
-# ================================================================
+# Validaciones
 
 def validar_email(email: str) -> bool:
     patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -51,11 +41,16 @@ def validar_nombre(nombre: str) -> bool:
     patron = r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$'
     return re.match(patron, nombre) is not None
 
-# ================================================================
-# LÓGICA DE NEGOCIO (SIN INPUT/PRINT)
-# ================================================================
+def validar_telefono(telefono: str) -> bool:
+    if not telefono:
+        return True
+    patron = r'^[0-9+\-\s]{8,15}$'
+    return re.match(patron, telefono) is not None
 
-def registrar_usuario(nombre: str, email: str, contrasena: str, confirmar_contrasena: str) -> dict:
+# LÓGICA DE NEGOCIO - USUARIOS
+
+def registrar_usuario(nombre: str, email: str, contrasena: str, confirmar_contrasena: str,
+                      telefono: str = "", empresa: str = "", sector: str = "otros") -> dict:
     if contrasena != confirmar_contrasena:
         return {'exito': False, 'mensaje': 'Las contrasenas no coinciden.', 'usuario': None}
     
@@ -72,8 +67,24 @@ def registrar_usuario(nombre: str, email: str, contrasena: str, confirmar_contra
     if not validar_contrasena(contrasena):
         return {'exito': False, 'mensaje': 'La contrasena debe tener al menos 6 caracteres, una mayuscula y un numero.', 'usuario': None}
     
+    if telefono and not validar_telefono(telefono):
+        return {'exito': False, 'mensaje': 'El telefono debe tener entre 8 y 15 digitos.', 'usuario': None}
+    
+    sectores_validos = ['publico', 'privado', 'educativo', 'otros']
+    if sector not in sectores_validos:
+        return {'exito': False, 'mensaje': 'Sector invalido. Use: publico, privado, educativo, otros.', 'usuario': None}
+    
     nuevo_id = obtener_siguiente_id_usuario()
-    usuario = Usuario(id=nuevo_id, nombre=nombre.strip(), email=email_normalizado, contrasena=contrasena)
+    usuario = Usuario(
+        id=nuevo_id,
+        nombre=nombre.strip(),
+        email=email_normalizado,
+        contrasena=contrasena,
+        rol="cliente",
+        telefono=telefono.strip(),
+        empresa=empresa.strip() if empresa else "Soluciones 2T",
+        sector=sector
+    )
     
     usuarios_registrados.append(usuario)
     usuarios_por_email[usuario.email] = usuario
@@ -92,12 +103,21 @@ def buscar_usuario_por_id(id: int) -> Usuario | None:
 def listar_usuarios() -> list[Usuario]:
     return usuarios_registrados.copy()
 
-def actualizar_usuario(email: str, nuevo_nombre: str = None, nueva_contrasena: str = None) -> dict:
+def listar_clientes() -> list[Usuario]:
+    """Retorna solo los usuarios con rol 'cliente'"""
+    return [u for u in usuarios_registrados if u.rol == "cliente"]
+
+def actualizar_usuario(email: str, nuevo_nombre: str = None, nueva_contrasena: str = None,
+                       nuevo_telefono: str = None, nueva_empresa: str = None,
+                       nuevo_sector: str = None) -> dict:
     email_normalizado = email.lower().strip()
     usuario = usuarios_por_email.get(email_normalizado)
     
     if usuario is None:
         return {'exito': False, 'mensaje': 'Usuario no encontrado.', 'usuario': None}
+    
+    if usuario.email == ADMIN_EMAIL and usuario.rol == "admin":
+        return {'exito': False, 'mensaje': 'No se puede modificar al administrador.', 'usuario': None}
     
     if nuevo_nombre is not None:
         if not validar_nombre(nuevo_nombre):
@@ -108,6 +128,20 @@ def actualizar_usuario(email: str, nuevo_nombre: str = None, nueva_contrasena: s
         if not validar_contrasena(nueva_contrasena):
             return {'exito': False, 'mensaje': 'La contrasena debe tener al menos 6 caracteres, una mayuscula y un numero.', 'usuario': None}
         usuario.contrasena = nueva_contrasena
+    
+    if nuevo_telefono is not None:
+        if nuevo_telefono and not validar_telefono(nuevo_telefono):
+            return {'exito': False, 'mensaje': 'El telefono debe tener entre 8 y 15 digitos.', 'usuario': None}
+        usuario.telefono = nuevo_telefono.strip()
+    
+    if nueva_empresa is not None:
+        usuario.empresa = nueva_empresa.strip() if nueva_empresa else "Soluciones 2T"
+    
+    if nuevo_sector is not None:
+        sectores_validos = ['publico', 'privado', 'educativo', 'otros']
+        if nuevo_sector not in sectores_validos:
+            return {'exito': False, 'mensaje': 'Sector invalido. Use: publico, privado, educativo, otros.', 'usuario': None}
+        usuario.sector = nuevo_sector
     
     return {'exito': True, 'mensaje': 'Usuario actualizado exitosamente.', 'usuario': usuario}
 
@@ -128,6 +162,9 @@ def eliminar_usuario(email: str) -> dict:
 
 def contar_usuarios() -> int:
     return len(usuarios_registrados)
+
+def contar_clientes() -> int:
+    return len([u for u in usuarios_registrados if u.rol == "cliente"])
 
 def iniciar_sesion(email: str, contrasena: str) -> dict:
     usuario = buscar_usuario_por_email(email)
@@ -160,19 +197,7 @@ def iniciar_sesion_admin(contrasena_admin: str) -> dict:
     else:
         return {'exito': False, 'mensaje': 'Contraseña de administrador incorrecta.', 'usuario': None, 'es_admin': False}
 
-def reportar_problema(usuario: Usuario, problema: str) -> dict:
-    if not problema or len(problema.strip()) == 0:
-        return {'exito': False, 'mensaje': 'El problema no puede estar vacio.'}
-    
-    print("\n" + "=" * 60)
-    print("  REPORTE DE PROBLEMA")
-    print("=" * 60)
-    print(f"  Usuario: {usuario.nombre} ({usuario.email})")
-    print(f"  Problema: {problema}")
-    print(f"  Estado: Pendiente de revision")
-    print("=" * 60)
-    
-    return {'exito': True, 'mensaje': 'Problema reportado exitosamente.'}
+#logica de negocio - incidencias
 
 def registrar_incidencia(usuario_id: int, titulo: str, descripcion: str, prioridad: str = "media") -> dict:
     if not titulo or len(titulo.strip()) == 0:
@@ -191,10 +216,10 @@ def registrar_incidencia(usuario_id: int, titulo: str, descripcion: str, priorid
     incidencia = Incidencia(
         id=nuevo_id,
         usuario_id=usuario_id,
-        Titulo=titulo.strip(),
-        Descripcion=descripcion.strip(),
-        Estado='pendiente',
-        Fecha_Creacion=fecha_actual,
+        titulo=titulo.strip(),
+        descripcion=descripcion.strip(),
+        estado='pendiente',
+        fecha_creacion=fecha_actual,
         prioridad=prioridad
     )
     
@@ -205,6 +230,9 @@ def registrar_incidencia(usuario_id: int, titulo: str, descripcion: str, priorid
 
 def listar_incidencias() -> list:
     return incidencias_registradas.copy()
+
+def listar_incidencias_por_usuario(usuario_id: int) -> list:
+    return [i for i in incidencias_registradas if i.usuario_id == usuario_id]
 
 def buscar_incidencia_por_id(id: int):
     return incidencias_por_id.get(id)
@@ -219,9 +247,8 @@ def actualizar_estado_incidencia(id: int, nuevo_estado: str) -> dict:
     if incidencia is None:
         return {'exito': False, 'mensaje': 'Incidencia no encontrada.'}
     
-    incidencia.Estado = nuevo_estado
-    
-    # Diccionario para mostrar el estado en formato legible (sin guiones bajos)
+    incidencia.estado = nuevo_estado
+
     nombres_legibles = {
         'pendiente': 'Pendiente',
         'en_proceso': 'En proceso',
@@ -247,105 +274,28 @@ def eliminar_incidencia(id: int) -> dict:
 def contar_incidencias() -> int:
     return len(incidencias_registradas)
 
-def registrar_cliente(nombre: str, email: str, telefono: str, empresa: str, sector: str) -> dict:
-    if not validar_nombre(nombre):
-        return {'exito': False, 'mensaje': 'Nombre invalido.', 'cliente': None}
-    
-    if not validar_email(email):
-        return {'exito': False, 'mensaje': 'Email invalido.', 'cliente': None}
-    
-    email_normalizado = email.lower().strip()
-    if email_normalizado in clientes_por_email:
-        return {'exito': False, 'mensaje': 'Email ya registrado.', 'cliente': None}
-    
-    sectores_validos = ['publico', 'privado', 'educativo', 'otro']
-    if sector not in sectores_validos:
-        return {'exito': False, 'mensaje': 'Sector invalido. Use: publico, privado, educativo, otro.', 'cliente': None}
-    
-    nuevo_id = obtener_siguiente_id_cliente()
-    
-    cliente = Cliente(
-        id=nuevo_id,
-        nombre=nombre.strip(),
-        email=email_normalizado,
-        telefono=telefono.strip() if telefono else "",
-        empresa=empresa.strip() if empresa else "",
-        sector=sector
-    )
-    
-    clientes_registrados.append(cliente)
-    clientes_por_email[cliente.email] = cliente
-    
-    return {'exito': True, 'mensaje': 'Cliente registrado exitosamente.', 'cliente': cliente}
-
-def listar_clientes() -> list:
-    return clientes_registrados.copy()
-
-def buscar_cliente_por_email(email: str):
-    return clientes_por_email.get(email.lower().strip())
-
-def actualizar_cliente(email: str, nuevo_nombre: str = None, nuevo_telefono: str = None, nueva_empresa: str = None) -> dict:
-    email_normalizado = email.lower().strip()
-    cliente = clientes_por_email.get(email_normalizado)
-    
-    if cliente is None:
-        return {'exito': False, 'mensaje': 'Cliente no encontrado.', 'cliente': None}
-    
-    if nuevo_nombre is not None:
-        if not validar_nombre(nuevo_nombre):
-            return {'exito': False, 'mensaje': 'Nombre invalido.', 'cliente': None}
-        cliente.nombre = nuevo_nombre.strip()
-    
-    if nuevo_telefono is not None:
-        cliente.telefono = nuevo_telefono.strip()
-    
-    if nueva_empresa is not None:
-        cliente.empresa = nueva_empresa.strip()
-    
-    return {'exito': True, 'mensaje': 'Cliente actualizado exitosamente.', 'cliente': cliente}
-
-def eliminar_cliente(email: str) -> dict:
-    email_normalizado = email.lower().strip()
-    cliente = clientes_por_email.get(email_normalizado)
-    
-    if cliente is None:
-        return {'exito': False, 'mensaje': 'Cliente no encontrado.'}
-    
-    del clientes_por_email[email_normalizado]
-    clientes_registrados[:] = [c for c in clientes_registrados if c.email != email_normalizado]
-    
-    return {'exito': True, 'mensaje': 'Cliente eliminado exitosamente.'}
-
-def contar_clientes() -> int:
-    return len(clientes_registrados)
-
-# ================================================================
-# VALIDACIONES CON BUCLE (INTERACTIVAS)
-# ================================================================
+#validar y leer datos de usuario de forma interactiva
 
 def leer_y_validar_email(mensaje: str) -> str:
-    """Lee un email del usuario y lo valida hasta que sea correcto"""
     while True:
         email = input(mensaje).strip()
         if validar_email(email):
             return email.lower().strip()
-        print("  Error: El formato del correo no es válido. Ejemplo: usuario@dominio.com")
+        print("El formato del correo no es válido. Ejemplo: usuario@dominio.com")
 
 def leer_y_validar_nombre(mensaje: str) -> str:
-    """Lee un nombre del usuario y lo valida hasta que sea correcto"""
     while True:
         nombre = input(mensaje).strip()
         if validar_nombre(nombre):
             return nombre.strip()
-        print("  Error: El nombre solo debe contener letras y espacios.")
+        print("El nombre solo debe contener letras y espacios.")
 
 def leer_y_validar_contrasena(mensaje: str, confirmar: bool = True) -> str:
-    """Lee una contraseña del usuario y la valida hasta que sea correcta"""
     while True:
         contrasena = input(mensaje).strip()
         
         if not validar_contrasena(contrasena):
-            print("  Error: La contraseña debe tener mínimo 6 caracteres, una mayúscula y un número.")
+            print("La contraseña debe tener mínimo 6 caracteres, una mayúscula y un número.")
             continue
         
         if not confirmar:
@@ -354,13 +304,12 @@ def leer_y_validar_contrasena(mensaje: str, confirmar: bool = True) -> str:
         confirmacion = input("Confirme su contraseña: ").strip()
         
         if contrasena != confirmacion:
-            print("  Error: Las contraseñas no coinciden.")
+            print("Las contraseñas no coinciden.")
             continue
         
         return contrasena
 
 def leer_y_validar_contrasena_actualizacion(mensaje: str) -> str | None:
-    """Lee una contraseña para actualización (puede estar vacía)"""
     while True:
         contrasena = input(mensaje).strip()
         
@@ -368,27 +317,57 @@ def leer_y_validar_contrasena_actualizacion(mensaje: str) -> str | None:
             return None
         
         if not validar_contrasena(contrasena):
-            print("  Error: La contraseña debe tener mínimo 6 caracteres, una mayúscula y un número.")
+            print("La contraseña debe tener mínimo 6 caracteres, una mayúscula y un número.")
             continue
         
         confirmacion = input("Confirme la nueva contraseña: ").strip()
         
         if contrasena != confirmacion:
-            print("  Error: Las contraseñas no coinciden.")
+            print("Las contraseñas no coinciden.")
             continue
         
         return contrasena
 
-# ================================================================
-# BUCLES INTERACTIVOS PARA INICIO DE SESIÓN Y REGISTRO
-# ================================================================
+def leer_y_validar_telefono(mensaje: str) -> str:
+    while True:
+        telefono = input(mensaje).strip()
+        if not telefono or validar_telefono(telefono):
+            return telefono
+        print("El teléfono debe tener entre 8 y 15 dígitos.")
+
+def leer_sector_interactivo() -> str:
+    """Lee un sector del usuario con opciones"""
+    print("\n  Sectores disponibles:")
+    print("    1. Público")
+    print("    2. Privado")
+    print("    3. Educativo")
+    print("    4. Otros")
+    
+    while True:
+        opcion = input("  Elija una opción (1-4): ").strip()
+        if opcion == '1':
+            return 'publico'
+        elif opcion == '2':
+            return 'privado'
+        elif opcion == '3':
+            return 'educativo'
+        elif opcion == '4':
+            return 'otros'
+        print("Opción inválida. Elija entre 1, 2, 3 o 4.")
+
+#alias para funciones con ñ
+
+# Para que funcione con import de validar_contraseña (con ñ)
+validar_contraseña = validar_contrasena
+
+# Para que funcione con import de leer_y_validar_contraseña_actualizacion (con ñ)
+leer_y_validar_contraseña_actualizacion = leer_y_validar_contrasena_actualizacion
+
+#bucles interactivos para iniciar sesión y registrar usuarios
 
 def iniciar_sesion_interactivo_usuario() -> dict:
-    """
-    Bucle interactivo para iniciar sesión como usuario.
-    Repite hasta que las credenciales sean correctas.
-    """
-    print("  INICIAR SESIÓN COMO USUARIO")
+    
+    print(" Iniciar sesión de usuario")
     print("-" * 60)
     
     while True:
@@ -404,11 +383,8 @@ def iniciar_sesion_interactivo_usuario() -> dict:
             print("  Intente nuevamente...\n")
 
 def iniciar_sesion_interactivo_admin() -> dict:
-    """
-    Bucle interactivo para acceder como administrador.
-    Repite hasta que la contraseña sea correcta.
-    """
-    print("  ACCESO DE ADMINISTRADOR")
+   
+    print("Acceso de administrador")
     print("-" * 60)
     print("  (No necesita email, solo la contraseña especial)")
     
@@ -424,44 +400,25 @@ def iniciar_sesion_interactivo_admin() -> dict:
             print("  Intente nuevamente...\n")
 
 def registrar_usuario_interactivo() -> dict:
-    """
-    Bucle interactivo para registrar un usuario.
-    Repite hasta que todos los datos sean válidos.
-    """
+   
     print("  Complete los siguientes datos:")
     print("-" * 40)
     
     nombre = leer_y_validar_nombre("Nombre completo: ")
     email = leer_y_validar_email("Correo electrónico: ")
     
-    # Verificar si el email ya está registrado
     while buscar_usuario_por_email(email) is not None:
-        print("  Error: Este correo electrónico ya está registrado.")
+        print("Este correo electrónico ya está registrado.")
         email = leer_y_validar_email("Correo electrónico: ")
     
     contrasena = leer_y_validar_contrasena("Ingrese su contraseña: ", confirmar=True)
-    
-    resultado = registrar_usuario(nombre, email, contrasena, contrasena)
-    return resultado
+    telefono = leer_y_validar_telefono("Teléfono (opcional): ")
 
-def registrar_cliente_interactivo() -> dict:
-    """
-    Bucle interactivo para registrar un cliente.
-    Repite hasta que todos los datos sean válidos.
-    """
-    nombre = leer_y_validar_nombre("Nombre completo: ")
-    email = leer_y_validar_email("Email: ")
+    empresa = input("Empresa (Enter para 'Soluciones 2T'): ").strip()
+    if not empresa:
+        empresa = "Soluciones 2T"
     
-    # Verificar si el email ya está registrado
-    while buscar_cliente_por_email(email) is not None:
-        print("  Error: Este correo electrónico ya está registrado como cliente.")
-        email = leer_y_validar_email("Email: ")
+    sector = leer_sector_interactivo()
     
-    telefono = input("Teléfono: ").strip()
-    empresa = input("Empresa: ").strip()
-    
-    print("  Sectores: publico, privado, educativo, otro")
-    sector = input("Sector: ").strip()
-    
-    resultado = registrar_cliente(nombre, email, telefono, empresa, sector)
+    resultado = registrar_usuario(nombre, email, contrasena, contrasena, telefono, empresa, sector)
     return resultado
