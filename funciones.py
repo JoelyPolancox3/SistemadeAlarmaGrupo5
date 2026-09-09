@@ -221,7 +221,17 @@ def actualizar_estado_incidencia(id: int, nuevo_estado: str) -> dict:
     
     incidencia.Estado = nuevo_estado
     
-    return {'exito': True, 'mensaje': f'Estado actualizado a "{nuevo_estado}" exitosamente.', 'incidencia': incidencia}
+    # Diccionario para mostrar el estado en formato legible (sin guiones bajos)
+    nombres_legibles = {
+        'pendiente': 'Pendiente',
+        'en_proceso': 'En proceso',
+        'resuelto': 'Resuelto',
+        'cerrado': 'Cerrado'
+    }
+    
+    estado_mostrar = nombres_legibles.get(nuevo_estado, nuevo_estado)
+    
+    return {'exito': True, 'mensaje': f'Estado actualizado a "{estado_mostrar}" exitosamente.', 'incidencia': incidencia}
 
 def eliminar_incidencia(id: int) -> dict:
     incidencia = incidencias_por_id.get(id)
