@@ -10,7 +10,7 @@ incidencias_registradas: list[Incidencia] = []
 incidencias_por_id: dict[int, Incidencia] = {}
 _contador_incidencias: int = 0
 
-# CLientes
+# Clientes
 clientes_registrados: list[Cliente] = []
 clientes_por_email: dict[str, Cliente] = {}
 _contador_clientes: int = 0
@@ -48,3 +48,25 @@ def reiniciar_datos():
     clientes_registrados = []
     clientes_por_email = {}
     _contador_clientes = 0
+
+# Función para crear admin si no existe
+def crear_admin_si_no_existe():
+    """Crea el usuario administrador si no existe"""
+    admin_email = "admin@soluciones2t.com"
+    admin_password = "admin123"
+    
+    # Buscar si ya existe admin
+    for usuario in usuarios_registrados:
+        if usuario.email == admin_email:
+            return
+    
+    # Crear admin
+    admin = Usuario(
+        id=obtener_siguiente_id_usuario(),
+        nombre="Administrador",
+        email=admin_email,
+        contrasena=admin_password,
+        rol="admin"
+    )
+    usuarios_registrados.append(admin)
+    usuarios_por_email[admin.email] = admin
