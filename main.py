@@ -653,7 +653,7 @@ def menu_principal_autenticado():
             # ===== MENÚ DE ADMINISTRADOR (Gestiona TODAS las incidencias) =====
             print("  1. Ver todas las incidencias")
             print("  2. Gestionar incidencias (cambiar estado, eliminar)")
-            print("  3. Ver clientes")
+            print("  3. Ver usuarios registrados")  # <--- CAMBIO AQUÍ
             print("  4. Ver mi perfil")
             print("  5. Cerrar sesión")
             print("  6. Salir del sistema")
@@ -698,19 +698,19 @@ def menu_principal_autenticado():
                 submenu_gestionar_incidencias()
                 
             elif opcion == '3':
-                # Ver clientes registrados
+                # Ver usuarios registrados
                 limpiar_pantalla()
-                mostrar_encabezado("LISTA DE CLIENTES")
+                mostrar_encabezado("LISTA DE USUARIOS REGISTRADOS")
                 
-                clientes = listar_clientes()
+                usuarios = listar_usuarios()
                 
-                if len(clientes) == 0:
-                    print("\n  No hay clientes registrados.")
+                if len(usuarios) == 0:
+                    print("\n  No hay usuarios registrados.")
                 else:
-                    print(f"\n  Total de clientes: {len(clientes)}")
+                    print(f"\n  Total de usuarios: {len(usuarios)}")
                     print("-" * 60)
-                    for c in clientes:
-                        print(f"  ID: {c.id} | Nombre: {c.nombre} | Email: {c.email} | Empresa: {c.empresa}")
+                    for u in usuarios:
+                        print(f"  ID: {u.id} | Nombre: {u.nombre} | Email: {u.email} | Rol: {u.rol}")
                 pausa()
                 
             elif opcion == '4':
