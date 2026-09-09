@@ -1,3 +1,11 @@
+#empresa:"Solcuiones 2T"
+#grupo 5 integrantes:
+#Genezareth Nohelia Lopez Martinez - 6F9AF8E2
+#6b47fa53 – Br. Cristel Michelle González Alemán
+#6c0a5a64 – Br. Flor María Moreno Castillo
+#6b7a2bd5 – Br. Francis Yuliana Espinoza Moreno
+#6BEA74F7 – Joely Nicollette Nuñez Polanco
+
 from funciones import (
     # Funciones de lógica
     listar_usuarios,
