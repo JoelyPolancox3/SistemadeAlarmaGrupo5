@@ -23,8 +23,11 @@ from funciones import (
     leer_y_validar_contrasena_actualizacion,
     leer_y_validar_telefono,
     leer_sector_interactivo,
-    crear_admin_si_no_existe
+
 )
+
+# Importar crear_admin_si_no_existe desde datos.py
+from datos import crear_admin_si_no_existe
 
 import os
 import time
